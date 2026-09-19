@@ -1,3 +1,25 @@
 import Link from 'next/link';
-const services=[['LOCAL TRANSPORTATION','Reliable professional rides throughout your city.'],['LONG DISTANCE','Comfortable trips across Ohio, Michigan and beyond.'],['AIRPORT','DTW, CLE, CMH, TOL and regional airport service.'],['MEDICAL','Dependable non-emergency transportation to appointments and facilities.'],['EVENTS','Weddings, concerts, corporate events and group transportation.']];
-export default function Home(){return <main><section style={{minHeight:'68vh',display:'grid',placeItems:'center',background:'radial-gradient(circle at 50% 20%,#2a2205 0,#090909 40%,#050505 70%)'}}><div className="shell" style={{textAlign:'center',paddingTop:60,paddingBottom:60}}><div className="gold" style={{letterSpacing:4,fontSize:13,fontWeight:800}}>OHIO & MICHIGAN PREMIUM RIDE SERVICE</div><h1 style={{fontSize:'clamp(48px,9vw,105px)',lineHeight:.92,margin:'18px 0'}}>ANYTIME.<br/><span className="gold">ANYWHERE.</span></h1><p className="muted" style={{fontSize:20,maxWidth:700,margin:'0 auto 28px'}}>Local, airport, long-distance, medical and event transportation backed by professional service.</p><div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}><Link className="btn btn-gold" href="/book">Request a Ride</Link><a className="btn btn-outline" href="tel:14194555181">Call 419-455-5181</a></div></div></section><section id="services" className="shell" style={{padding:'70px 18px'}}><div className="gold" style={{fontWeight:800,letterSpacing:3}}>WHAT WE OFFER</div><h2 style={{fontSize:42,margin:'10px 0 25px'}}>EVERY RIDE, COVERED.</h2><div className="grid2">{services.map(([t,d])=><div className="panel" style={{padding:24}} key={t}><h3 className="gold">{t}</h3><p className="muted">{d}</p></div>)}</div></section><section id="about" style={{background:'#0b0b0b',padding:'70px 0'}}><div className="shell grid2"><div><div className="gold" style={{letterSpacing:3,fontWeight:800}}>WHY A2B</div><h2 style={{fontSize:40}}>PREMIUM SERVICE WITHOUT THE RUNAROUND.</h2><p className="muted">A2B Rides Ohio is operated by Anytime Anywhere Solutions LLC and built around reliability, clean vehicles, respectful drivers, clear pricing and direct customer support.</p></div><div className="panel" style={{padding:26}}><h3>Service Area</h3><p className="muted">Northwest Ohio, Southeast Michigan, airport corridors and pre-arranged long-distance trips.</p><h3>Availability</h3><p className="muted">24/7 by reservation. Dispatch support 6 AM–10 PM daily.</p></div></div></section></main>}
+
+const services=[
+  ['LOCAL RIDES','Direct transportation across Toledo, Fremont and surrounding Northwest Ohio communities.'],
+  ['AIRPORT','Pre-arranged service to DTW, CLE, CMH, TOL and other regional airports.'],
+  ['MEDICAL','One-way or round-trip transportation for appointments, procedures and treatment.'],
+  ['LONG DISTANCE','Comfortable one-way, round-trip and multi-day travel across Ohio, Michigan and beyond.'],
+  ['EVENT & VIP','Concerts, casinos, business travel, nights out and private event transportation.'],
+  ['DIRECT SUPPORT','Call or text A2B directly when plans change or you need help with a booking.'],
+];
+
+export default function Home(){return <main>
+  <section className="hero"><div className="shell" style={{textAlign:'center',paddingBlock:72}}>
+    <div className="eyebrow">PROFESSIONAL RIDES ACROSS OHIO &amp; MICHIGAN</div>
+    <h1 style={{fontSize:'clamp(3.4rem,10vw,7.5rem)',margin:'18px 0 20px'}}>ANYTIME.<br/><span className="gold">ANYWHERE.</span></h1>
+    <p className="muted" style={{fontSize:20,maxWidth:720,margin:'0 auto 30px'}}>Local, airport, medical, event and long-distance transportation with direct support from A2B.</p>
+    <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}><Link className="btn btn-gold" href="/book">Get Fare &amp; Request Ride</Link><a className="btn btn-outline" href="sms:14194555181">Text 419-455-5181</a></div>
+    <p className="muted" style={{marginTop:18,fontSize:14}}>Available by reservation • Final fare confirmed before payment</p>
+  </div></section>
+  <section id="services" className="shell section"><div className="eyebrow">SERVICES</div><h2 style={{fontSize:'clamp(2.2rem,6vw,3.8rem)',margin:'10px 0 28px'}}>ONE NUMBER FOR THE WHOLE TRIP.</h2><div className="grid3">{services.map(([title,description])=><article className="panel service-card" key={title}><h3 className="gold">{title}</h3><p className="muted">{description}</p></article>)}</div></section>
+  <section style={{background:'#0b0b0b',paddingBlock:72}}><div className="shell grid2">
+    <div><div className="eyebrow">HOW IT WORKS</div><h2 style={{fontSize:42}}>CLEAR PRICE. DIRECT CONTACT. SECURE PAYMENT.</h2><p className="muted">Enter your route, receive an estimate, and submit the request. Dispatch reviews the trip and locks the final fare. You pay securely only after that confirmation.</p></div>
+    <div className="panel" style={{padding:26}}><ol style={{margin:0,paddingLeft:22}}><li style={{marginBottom:14}}>Enter your pickup, destination and trip time.</li><li style={{marginBottom:14}}>Submit the request for dispatch review.</li><li>Pay securely after your final fare is locked.</li></ol><Link className="btn btn-gold" style={{marginTop:22}} href="/book">Start Booking</Link></div>
+  </div></section>
+</main>}
