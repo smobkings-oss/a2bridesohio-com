@@ -13,8 +13,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <header style={{position:'sticky',top:0,zIndex:40,background:'rgba(5,5,5,.94)',borderBottom:'1px solid #252525',backdropFilter:'blur(12px)'}}>
       <div className="shell header-inner">
         <Link href="/" style={{fontWeight:950,fontSize:20,letterSpacing:'.02em'}}>A2B <span className="gold">RIDES</span></Link>
-        <nav className="navlinks" aria-label="Main navigation"><Link href="/#services">Services</Link><Link href="/book">Book a Ride</Link><Link href="/drivers">Drive With Us</Link><Link href="/#contact">Contact</Link></nav>
-        <a className="btn btn-gold mobile-call" href="tel:14194555181">Call Now</a>
+        <nav className="navlinks" aria-label="Main navigation"><Link href="/#services">Services</Link><Link href="/book">Book a Ride</Link><Link href="/drivers">Drive With Us</Link><Link href="/driver">Driver Login</Link><Link href="/account">Passenger Login</Link></nav>
+        <Link className="btn btn-gold mobile-call" href="/account">Sign In</Link>
         <Link className="btn btn-gold navlinks" href="/book">Request a Ride</Link>
       </div>
     </header>
