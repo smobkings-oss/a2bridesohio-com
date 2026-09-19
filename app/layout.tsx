@@ -21,7 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     {children}
     <footer id="contact" style={{borderTop:'1px solid #252525',padding:'42px 0',marginTop:56}}>
       <div className="shell grid3">
-        <div><strong>A2B RIDES OHIO</strong><div className="muted">Anytime Anywhere Solutions LLC</div></div>
+        <div><strong>A2B RIDES</strong><div className="muted">A DBA of Anytime Anywhere Solutions LLC</div></div>
         <div><strong>Call or text</strong><br/><a href="tel:14194555181">419-455-5181</a></div>
         <div><strong>Email</strong><br/><a href="mailto:a2brides@a2bridesohio.com">a2brides@a2bridesohio.com</a></div>
       </div>
