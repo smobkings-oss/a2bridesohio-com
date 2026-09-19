@@ -4,7 +4,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.SITE_URL || 'https://a2bridesohio.com'),
-  title: { default: 'A2B Rides Ohio | Anytime, Anywhere', template: '%s | A2B Rides Ohio' },
+  title: { default: 'A2B RIDES | Anytime, Anywhere', template: '%s | A2B RIDES' },
   description: 'Professional local, airport, medical, event and long-distance transportation across Ohio and Michigan.',
 };
 
@@ -12,7 +12,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return <html lang="en"><body>
     <header style={{position:'sticky',top:0,zIndex:40,background:'rgba(5,5,5,.94)',borderBottom:'1px solid #252525',backdropFilter:'blur(12px)'}}>
       <div className="shell header-inner">
-        <Link href="/" style={{fontWeight:950,fontSize:20,letterSpacing:'.02em'}}>A2B <span className="gold">RIDES OHIO</span></Link>
+        <Link href="/" style={{fontWeight:950,fontSize:20,letterSpacing:'.02em'}}>A2B <span className="gold">RIDES</span></Link>
         <nav className="navlinks" aria-label="Main navigation"><Link href="/#services">Services</Link><Link href="/book">Book a Ride</Link><Link href="/drivers">Drive With Us</Link><Link href="/#contact">Contact</Link></nav>
         <a className="btn btn-gold mobile-call" href="tel:14194555181">Call Now</a>
         <Link className="btn btn-gold navlinks" href="/book">Request a Ride</Link>
@@ -25,7 +25,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <div><strong>Call or text</strong><br/><a href="tel:14194555181">419-455-5181</a></div>
         <div><strong>Email</strong><br/><a href="mailto:a2brides@a2bridesohio.com">a2brides@a2bridesohio.com</a></div>
       </div>
-      <div className="shell" style={{marginTop:30,display:'flex',gap:18,flexWrap:'wrap',color:'#777',fontSize:13}}><span>© 2026 A2B Rides Ohio</span><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></div>
+      <div className="shell" style={{marginTop:30,display:'flex',gap:18,flexWrap:'wrap',color:'#777',fontSize:13}}><span>© 2026 Anytime Anywhere Solutions LLC · A2B RIDES</span><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></div>
     </footer>
   </body></html>;
 }
