@@ -1,7 +1,13 @@
 create extension if not exists pgcrypto;
 create table if not exists ride_requests(id uuid primary key default gen_random_uuid(),created_at timestamptz not null default now(),updated_at timestamptz not null default now(),name text not null,phone text not null,pickup text not null,dropoff text not null,ride_date date not null,ride_time time not null,passengers int not null default 1,airport boolean not null default false,notes text not null default '',distance_miles numeric,duration_minutes numeric,fare_estimate_cents int not null,locked_fare_cents int,fare_locked boolean not null default false,status text not null default 'New',payment_status text not null default 'unpaid',public_token text not null unique,stripe_checkout_session_id text,stripe_payment_intent_id text,paid_at timestamptz);
 create table if not exists driver_applications(id uuid primary key default gen_random_uuid(),created_at timestamptz not null default now(),updated_at timestamptz not null default now(),name text not null,phone text not null,email text not null,address text,vehicle text not null,license text not null,availability text,experience text,insurance text not null,status text not null default 'Pending');
-alter table ride_requests enable row level security;alter table driver_applications enable row level security;
+create table if not exists profiles(id uuid primary key references auth.users(id) on delete cascade,created_at timestamptz not null default now(),updated_at timestamptz not null default now(),role text not null check(role in ('passenger','driver')),name text not null,phone text not null);
+create table if not exists drivers(id uuid primary key default gen_random_uuid(),created_at timestamptz not null default now(),updated_at timestamptz not null default now(),user_id uuid not null unique references auth.users(id) on delete cascade,application_id uuid unique references driver_applications(id),name text not null,phone text not null,email text not null unique,vehicle text not null,status text not null default 'Offline');
+alter table ride_requests add column if not exists passenger_id uuid references auth.users(id) on delete set null;
+alter table ride_requests add column if not exists assigned_driver_id uuid references drivers(id) on delete set null;
+alter table ride_requests enable row level security;alter table driver_applications enable row level security;alter table profiles enable row level security;alter table drivers enable row level security;
 create index if not exists ride_requests_created_at_idx on ride_requests(created_at desc);
 create index if not exists ride_requests_status_idx on ride_requests(status);
+create index if not exists ride_requests_passenger_idx on ride_requests(passenger_id,created_at desc);
+create index if not exists ride_requests_driver_idx on ride_requests(assigned_driver_id,ride_date,ride_time);
 create index if not exists driver_applications_created_at_idx on driver_applications(created_at desc);
