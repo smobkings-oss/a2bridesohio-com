@@ -1,6 +1,6 @@
-# A2B Rides Ohio
+# A2B RIDES
 
-Canonical production repository for [a2bridesohio.com](https://a2bridesohio.com).
+Canonical production repository for A2B RIDES, a DBA of Anytime Anywhere Solutions LLC, at [a2bridesohio.com](https://a2bridesohio.com).
 
 ## Included
 
