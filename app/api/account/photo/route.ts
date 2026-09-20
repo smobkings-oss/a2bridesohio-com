@@ -2,6 +2,7 @@ import {NextResponse} from 'next/server';
 import {currentAccount} from '../../../../lib/account';
 import {db} from '../../../../lib/db';
 import sharp from 'sharp';
+import {sameOrigin} from '../../../../lib/http';
 
 const bucket='account-photos';
 const headers={'Cache-Control':'private, no-store, max-age=0','X-Content-Type-Options':'nosniff'};
@@ -10,7 +11,7 @@ export async function GET(req:Request){
   let userId=account.user.id;
   const rideId=new URL(req.url).searchParams.get('ride');
   if(rideId){
-    const service=db();const {data:ride}=await service.from('ride_requests').select('passenger_id,assigned_driver_id,status').eq('id',rideId).in('status',['Assigned','En Route','Arrived','In Progress']).maybeSingle();
+    const service=db();const {data:ride}=await service.from('ride_requests').select('passenger_id,assigned_driver_id,status').eq('id',rideId).in('status',['En Route','Arrived','In Progress']).maybeSingle();
     if(!ride?.assigned_driver_id)return new Response(null,{status:404,headers});
     const {data:driver}=await service.from('drivers').select('user_id').eq('id',ride.assigned_driver_id).maybeSingle();
     if(!driver)return new Response(null,{status:404,headers});
@@ -23,6 +24,7 @@ export async function GET(req:Request){
   return new Response(await data.arrayBuffer(),{headers:{...headers,'Content-Type':data.type||'image/jpeg'}});
 }
 export async function POST(req:Request){
+  if(!sameOrigin(req))return NextResponse.json({error:'Forbidden'},{status:403});
   const account=await currentAccount();if(!account)return NextResponse.json({error:'Sign in first.'},{status:401});
   if(Number(req.headers.get('content-length')||0)>4000000)return NextResponse.json({error:'Choose a photo under 3 MB.'},{status:413});
   const form=await req.formData(),photo=form.get('photo');

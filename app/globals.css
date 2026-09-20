@@ -69,7 +69,11 @@ h1,h2,h3 { line-height:1.05; letter-spacing:-.02em; }
 .fare-card strong { color:var(--gold); font-size:2.4rem; line-height:1; }
 .fare-card>div:last-child { text-align:right; }
 .booking-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.payment-choice { display:flex; gap:18px; flex-wrap:wrap; border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+.payment-choice legend { color:var(--gold); font-weight:900; padding-inline:6px; }
+.payment-choice label { display:flex; grid-auto-flow:column; align-items:center; gap:8px; }
+.ride-card>div:last-child { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
 .offer-card,.driver-admin-card { padding:20px; }
 .driver-admin-card { display:grid; gap:10px; }
 @media(max-width:800px){.grid2,.grid3{grid-template-columns:1fr}.navlinks{display:none!important}.mobile-call{display:inline-flex}.section{padding-block:52px}.hero{min-height:66vh}}
-@media(max-width:600px){.role-picker,.route-box,.booking-actions{grid-template-columns:1fr}.dashboard-head,.ride-card,.availability,.trip-top,.fare-card{align-items:stretch;flex-direction:column}.fare-card>div:last-child{text-align:left}.account-tabs .btn{flex:1}.stop-row{grid-template-columns:1fr}}
+@media(max-width:600px){.role-picker,.route-box,.booking-actions{grid-template-columns:1fr}.dashboard-head,.ride-card,.availability,.trip-top,.fare-card{align-items:stretch;flex-direction:column}.ride-card>div:last-child{align-items:stretch}.fare-card>div:last-child{text-align:left}.account-tabs .btn{flex:1}.stop-row{grid-template-columns:1fr}}

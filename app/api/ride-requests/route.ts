@@ -1,3 +1,60 @@
-import{NextResponse}from'next/server';import{randomBytes}from'crypto';import{db}from'../../../lib/db';import{isAdmin}from'../../../lib/auth';import{currentAccount}from'../../../lib/account';import{routeMetrics}from'../../../lib/routes';import{priceTrip}from'../../../lib/pricing';import{dispatchRide}from'../../../lib/dispatch';
-export async function POST(req:Request){try{const account=await currentAccount();if(!account||account.profile.role!=='passenger')return NextResponse.json({error:'Create or sign in to your passenger account before booking.'},{status:401});const x=await req.json();for(const k of['pickup','dropoff','date','time'])if(!x[k])return NextResponse.json({error:`${k} is required`},{status:400});if(!/^\d{4}-\d{2}-\d{2}$/.test(x.date)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(x.time))return NextResponse.json({error:'Enter a valid pickup date and time.'},{status:400});if(!Number.isInteger(Number(x.passengers||1))||Number(x.passengers||1)<1||Number(x.passengers||1)>6)return NextResponse.json({error:'Choose 1–6 passengers.'},{status:400});const stops=Array.isArray(x.stops)?x.stops.map((s:unknown)=>String(s).trim()).filter(Boolean).slice(0,4):[],m=await routeMetrics(String(x.pickup),String(x.dropoff),stops).catch(()=>null),fare=m?priceTrip(m.distanceMiles,m.durationMinutes,!!x.airport,String(x.date),String(x.time)):null,publicToken=randomBytes(24).toString('hex'),paymentMethod=['card','cash','text'].includes(x.paymentMethod)?x.paymentMethod:'card';const row={passenger_id:account.user.id,name:account.profile.name,phone:account.profile.phone,email:account.user.email||'',pickup:String(x.pickup).slice(0,300),dropoff:String(x.dropoff).slice(0,300),stops,ride_date:x.date,ride_time:x.time,passengers:Math.max(1,Math.min(6,Number(x.passengers||1))),airport:!!x.airport,notes:String(x.notes||'').slice(0,1500),fare_estimate_cents:fare?.totalCents||0,fare_subtotal_cents:fare?.subtotalCents||null,surcharge_percent:fare?.surchargePercent||0,distance_miles:m?.distanceMiles??null,duration_minutes:m?.durationMinutes??null,pickup_lat:m?.pickupLat??null,pickup_lng:m?.pickupLng??null,ride_tier:fare?.rideTier||'unquoted',payment_method:paymentMethod,status:'New',fare_locked:false,payment_status:paymentMethod==='cash'?'cash_due':'unpaid',public_token:publicToken};const service=db(),{data,error}=await service.from('ride_requests').insert(row).select('*').single();if(error)throw error;if(fare)await dispatchRide(service,data).catch(()=>undefined);return NextResponse.json({id:data.id,publicToken:data.public_token,fareEstimateCents:data.fare_estimate_cents,distanceMiles:data.distance_miles,rideTier:data.ride_tier,quotePending:!fare},{status:201})}catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Unable to save request'},{status:500})}}
-export async function PATCH(req:Request){if(!await isAdmin())return NextResponse.json({error:'Unauthorized'},{status:401});try{const x=await req.json();if(!x.id)return NextResponse.json({error:'id required'},{status:400});const patch:any={updated_at:new Date().toISOString()};if(x.status&&!['New','Contacted','Quoted','Scheduled','Assigned','En Route','Arrived','In Progress','Completed','Canceled'].includes(x.status))return NextResponse.json({error:'Invalid status'},{status:400});if(x.status)patch.status=x.status;if(typeof x.fareLocked==='boolean')patch.fare_locked=x.fareLocked;if(Number.isInteger(x.lockedFareCents)&&x.lockedFareCents>0)patch.locked_fare_cents=x.lockedFareCents;if(x.assignedDriverId===null||typeof x.assignedDriverId==='string'){patch.assigned_driver_id=x.assignedDriverId||null;if(x.assignedDriverId)patch.status='Assigned'}const{error}=await db().from('ride_requests').update(patch).eq('id',x.id);if(error)throw error;return NextResponse.json({ok:true})}catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Unable to update ride'},{status:500})}}
+import {randomBytes} from 'crypto';
+import {NextResponse} from 'next/server';
+import {currentAccount} from '../../../lib/account';
+import {isAdmin} from '../../../lib/auth';
+import {db} from '../../../lib/db';
+import {dispatchRide} from '../../../lib/dispatch';
+import {sameOrigin} from '../../../lib/http';
+import {priceTrip} from '../../../lib/pricing';
+import {routeMetrics} from '../../../lib/routes';
+
+export async function POST(req:Request){
+  try{
+    if(!sameOrigin(req))return NextResponse.json({error:'Forbidden'},{status:403});
+    const account=await currentAccount();
+    if(!account||account.profile.role!=='passenger')return NextResponse.json({error:'Create or sign in to your passenger account before booking.'},{status:401});
+    const input=await req.json();
+    for(const key of['pickup','dropoff','date','time'])if(!input[key])return NextResponse.json({error:`${key} is required`},{status:400});
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(input.date)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(input.time))return NextResponse.json({error:'Enter a valid pickup date and time.'},{status:400});
+    const passengers=Number(input.passengers||1);
+    if(!Number.isInteger(passengers)||passengers<1||passengers>6)return NextResponse.json({error:'Choose 1–6 passengers.'},{status:400});
+    const pickup=String(input.pickup).trim().slice(0,300),dropoff=String(input.dropoff).trim().slice(0,300);
+    if(pickup.length<5||dropoff.length<5||pickup.toLowerCase()===dropoff.toLowerCase())return NextResponse.json({error:'Enter two different full addresses.'},{status:400});
+    const stops=Array.isArray(input.stops)?input.stops.map((stop:unknown)=>String(stop).trim()).filter(Boolean).slice(0,4):[];
+    const metrics=await routeMetrics(pickup,dropoff,stops).catch(()=>null);
+    const fare=metrics?priceTrip(metrics.distanceMiles,metrics.durationMinutes,!!input.airport,String(input.date),String(input.time)):null;
+    const paymentMethod=input.paymentMethod==='cash'?'cash':'card';
+    const row={passenger_id:account.user.id,name:account.profile.name,phone:account.profile.phone,email:account.user.email||'',pickup,dropoff,stops,ride_date:input.date,ride_time:input.time,passengers,airport:!!input.airport,notes:String(input.notes||'').trim().slice(0,1500),fare_estimate_cents:fare?.totalCents||0,fare_subtotal_cents:fare?.subtotalCents||null,surcharge_percent:fare?.surchargePercent||0,distance_miles:metrics?.distanceMiles??null,duration_minutes:metrics?.durationMinutes??null,pickup_lat:metrics?.pickupLat??null,pickup_lng:metrics?.pickupLng??null,ride_tier:fare?.rideTier||'unquoted',payment_method:paymentMethod,status:'New',fare_locked:false,payment_status:paymentMethod==='cash'?'cash_due':'unpaid',public_token:randomBytes(24).toString('hex')};
+    const service=db(),{data,error}=await service.from('ride_requests').insert(row).select('id,fare_estimate_cents,distance_miles,ride_tier').single();
+    if(error)throw error;
+    if(fare)await dispatchRide(service,{...row,id:data.id}).catch(error=>console.error('Dispatch offer creation failed',error instanceof Error?error.message:error));
+    return NextResponse.json({id:data.id,fareEstimateCents:data.fare_estimate_cents,distanceMiles:data.distance_miles,rideTier:data.ride_tier,quotePending:!fare},{status:201});
+  }catch(error){
+    console.error('Ride request failed',error instanceof Error?error.message:error);
+    return NextResponse.json({error:'Unable to save your ride request. Please try again or contact A2B.'},{status:500});
+  }
+}
+
+export async function PATCH(req:Request){
+  if(!sameOrigin(req))return NextResponse.json({error:'Forbidden'},{status:403});
+  if(!await isAdmin())return NextResponse.json({error:'Unauthorized'},{status:401});
+  try{
+    const input=await req.json();
+    if(typeof input.id!=='string')return NextResponse.json({error:'id required'},{status:400});
+    const patch:Record<string,unknown>={updated_at:new Date().toISOString()};
+    if(input.status&&!['New','Contacted','Quoted','Scheduled','Assigned','En Route','Arrived','In Progress','Completed','Canceled'].includes(input.status))return NextResponse.json({error:'Invalid status'},{status:400});
+    if(input.status)patch.status=input.status;
+    if(typeof input.fareLocked==='boolean')patch.fare_locked=input.fareLocked;
+    if(Number.isInteger(input.lockedFareCents)&&input.lockedFareCents>0&&input.lockedFareCents<=1_000_000)patch.locked_fare_cents=input.lockedFareCents;
+    if(input.assignedDriverId===null||typeof input.assignedDriverId==='string'){patch.assigned_driver_id=input.assignedDriverId||null;if(input.assignedDriverId)patch.status='Assigned'}
+    let query=db().from('ride_requests').update(patch).eq('id',input.id);
+    if('locked_fare_cents'in patch)query=query.not('payment_status','in','(pending,paid)');
+    const{data:updated,error}=await query.select('id').maybeSingle();
+    if(error)throw error;
+    if(!updated)return NextResponse.json({error:'locked_fare_cents'in patch?'Fare cannot change after card payment starts or completes.':'Ride request not found.'},{status:'locked_fare_cents'in patch?409:404});
+    return NextResponse.json({ok:true});
+  }catch(error){
+    console.error('Ride update failed',error instanceof Error?error.message:error);
+    return NextResponse.json({error:'Unable to update ride'},{status:500});
+  }
+}

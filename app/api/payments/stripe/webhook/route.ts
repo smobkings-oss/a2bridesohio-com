@@ -1,1 +1,39 @@
-import Stripe from'stripe';import{NextResponse}from'next/server';import{headers}from'next/headers';import{db}from'../../../../../lib/db';export async function POST(req:Request){const key=process.env.STRIPE_SECRET_KEY,secret=process.env.STRIPE_WEBHOOK_SECRET;if(!key||!secret)return NextResponse.json({error:'Stripe webhook not configured'},{status:503});const stripe=new Stripe(key),body=await req.text(),sig=(await headers()).get('stripe-signature');if(!sig)return NextResponse.json({error:'Missing signature'},{status:400});let event:Stripe.Event;try{event=stripe.webhooks.constructEvent(body,sig,secret)}catch{return NextResponse.json({error:'Invalid signature'},{status:400})}if(event.type==='checkout.session.completed'){const s=event.data.object as Stripe.Checkout.Session,id=s.metadata?.ride_request_id;if(id)await db().from('ride_requests').update({payment_status:'paid',status:'Scheduled',stripe_payment_intent_id:String(s.payment_intent||''),paid_at:new Date().toISOString()}).eq('id',id)}if(event.type==='checkout.session.expired'){const s=event.data.object as Stripe.Checkout.Session,id=s.metadata?.ride_request_id;if(id)await db().from('ride_requests').update({payment_status:'unpaid'}).eq('id',id)}return NextResponse.json({received:true})}
+import Stripe from 'stripe';
+import {NextResponse} from 'next/server';
+import {db} from '../../../../../lib/db';
+
+export const runtime='nodejs';
+
+export async function POST(req:Request){
+  const key=process.env.STRIPE_SECRET_KEY,secret=process.env.STRIPE_WEBHOOK_SECRET;
+  if(!key||!secret)return NextResponse.json({error:'Stripe webhook not configured'},{status:503});
+  const stripe=new Stripe(key),body=await req.text(),signature=req.headers.get('stripe-signature');
+  if(!signature)return NextResponse.json({error:'Missing signature'},{status:400});
+  let event:Stripe.Event;
+  try{event=stripe.webhooks.constructEvent(body,signature,secret)}catch{return NextResponse.json({error:'Invalid signature'},{status:400})}
+  try{
+    const service=db();
+    if(event.type==='checkout.session.completed'){
+      const session=event.data.object as Stripe.Checkout.Session,id=session.metadata?.ride_request_id;
+      if(id&&session.payment_status==='paid'){
+        const{data:ride}=await service.from('ride_requests').select('id,locked_fare_cents,stripe_checkout_session_id').eq('id',id).single();
+        if(!ride||ride.stripe_checkout_session_id!==session.id||ride.locked_fare_cents!==session.amount_total||session.currency!=='usd')return NextResponse.json({error:'Payment details did not match the ride.'},{status:409});
+        const{error}=await service.from('ride_requests').update({payment_status:'paid',status:'Scheduled',payment_method:'card',stripe_payment_intent_id:String(session.payment_intent||''),paid_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',id).eq('stripe_checkout_session_id',session.id);
+        if(error)throw error;
+      }
+    }else if(event.type==='checkout.session.expired'){
+      const session=event.data.object as Stripe.Checkout.Session,id=session.metadata?.ride_request_id;
+      if(id)await service.from('ride_requests').update({payment_status:'unpaid',stripe_checkout_session_id:null,updated_at:new Date().toISOString()}).eq('id',id).eq('stripe_checkout_session_id',session.id).eq('payment_status','pending');
+    }else if(event.type==='charge.refunded'){
+      const charge=event.data.object as Stripe.Charge;
+      if(typeof charge.payment_intent==='string'&&charge.refunded)await service.from('ride_requests').update({payment_status:'refunded',updated_at:new Date().toISOString()}).eq('stripe_payment_intent_id',charge.payment_intent);
+    }else if(event.type==='payment_intent.payment_failed'){
+      const intent=event.data.object as Stripe.PaymentIntent;
+      await service.from('ride_requests').update({payment_status:'failed',updated_at:new Date().toISOString()}).eq('stripe_payment_intent_id',intent.id).neq('payment_status','paid');
+    }
+    return NextResponse.json({received:true});
+  }catch(error){
+    console.error('Stripe webhook processing failed',event.id,error instanceof Error?error.message:error);
+    return NextResponse.json({error:'Webhook processing failed'},{status:500});
+  }
+}

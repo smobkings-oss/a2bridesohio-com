@@ -10,7 +10,11 @@ const securityHeaders=[
 const nextConfig:NextConfig={
   reactStrictMode:true,
   poweredByHeader:false,
-  async headers(){return[{source:'/:path*',headers:securityHeaders}]},
+  async headers(){return[
+    {source:'/:path*',headers:securityHeaders},
+    {source:'/api/:path*',headers:[{key:'Cache-Control',value:'private, no-store, max-age=0'},{key:'Pragma',value:'no-cache'}]},
+    {source:'/sw.js',headers:[{key:'Cache-Control',value:'public, max-age=0, must-revalidate'},{key:'Service-Worker-Allowed',value:'/'}]},
+  ]},
 };
 
 export default nextConfig;

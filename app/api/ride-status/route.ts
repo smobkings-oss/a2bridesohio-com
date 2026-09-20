@@ -1,1 +1,14 @@
-import{NextResponse}from'next/server';import{db}from'../../../lib/db';import{passengerRide}from'../../../lib/ride-privacy';export async function GET(req:Request){const u=new URL(req.url),id=u.searchParams.get('id'),token=u.searchParams.get('token');if(!id||!token)return NextResponse.json({error:'Missing booking credentials'},{status:400});const{data,error}=await db().from('ride_requests').select('id,status,fare_locked,locked_fare_cents,fare_estimate_cents,payment_status,payment_method').eq('id',id).eq('public_token',token).single();if(error||!data)return NextResponse.json({error:'Booking not found'},{status:404});return NextResponse.json(passengerRide(data))}
+import {db} from '../../../lib/db';
+import {currentAccount} from '../../../lib/account';
+import {privateJson} from '../../../lib/http';
+import {passengerRide} from '../../../lib/ride-privacy';
+
+export async function GET(req:Request){
+  const account=await currentAccount();
+  if(!account||account.profile.role!=='passenger')return privateJson({error:'Unauthorized'},{status:401});
+  const id=new URL(req.url).searchParams.get('id');
+  if(!id)return privateJson({error:'Missing ride number'},{status:400});
+  const{data,error}=await db().from('ride_requests').select('id,status,fare_locked,locked_fare_cents,fare_estimate_cents,payment_status,payment_method').eq('id',id).eq('passenger_id',account.user.id).single();
+  if(error||!data)return privateJson({error:'Booking not found'},{status:404});
+  return privateJson(passengerRide(data));
+}

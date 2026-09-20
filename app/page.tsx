@@ -15,7 +15,7 @@ export default function Home(){return <main>
     <h1 style={{fontSize:'clamp(3.4rem,10vw,7.5rem)',margin:'18px 0 20px'}}>ANYTIME.<br/><span className="gold">ANYWHERE.</span></h1>
     <p className="muted" style={{fontSize:20,maxWidth:720,margin:'0 auto 30px'}}>Local, airport, medical, event and long-distance transportation with direct support from A2B.</p>
     <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}><Link className="btn btn-gold" href="/book">Get Fare &amp; Request Ride</Link><a className="btn btn-outline" href="sms:14194555181">Text 419-455-5181</a></div>
-    <p className="muted" style={{marginTop:18,fontSize:14}}>Available by reservation • Final fare confirmed before payment</p>
+    <p className="muted" style={{marginTop:18,fontSize:14}}>Available 24/7 by reservation • Final fare confirmed before payment</p>
   </div></section>
   <section id="services" className="shell section"><div className="eyebrow">SERVICES</div><h2 style={{fontSize:'clamp(2.2rem,6vw,3.8rem)',margin:'10px 0 28px'}}>ONE NUMBER FOR THE WHOLE TRIP.</h2><div className="grid3">{services.map(([title,description])=><article className="panel service-card" key={title}><h3 className="gold">{title}</h3><p className="muted">{description}</p></article>)}</div></section>
   <section style={{background:'#0b0b0b',paddingBlock:72}}><div className="shell grid2">

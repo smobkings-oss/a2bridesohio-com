@@ -1,1 +1,20 @@
-import{NextResponse}from'next/server';import{adminCookieName,adminCookieValue}from'../../../../lib/auth';export async function POST(req:Request){const{pin}=await req.json();const expected=process.env.ADMIN_PIN;if(!expected||String(pin)!==expected)return NextResponse.json({error:'Invalid credentials'},{status:401});const r=NextResponse.json({ok:true});r.cookies.set(adminCookieName,adminCookieValue(),{httpOnly:true,secure:true,sameSite:'strict',path:'/',maxAge:60*60*12});return r}
+import {NextResponse} from 'next/server';
+import {adminCookieName,adminCookieValue,adminSessionSeconds,credentialsMatch} from '../../../../lib/auth';
+import {privateHeaders,sameOrigin} from '../../../../lib/http';
+
+export async function POST(req:Request){
+  if(!sameOrigin(req))return NextResponse.json({error:'Forbidden'},{status:403,headers:privateHeaders});
+  let pin:unknown;
+  try{({pin}=await req.json())}catch{return NextResponse.json({error:'Invalid request'},{status:400,headers:privateHeaders})}
+  if(!credentialsMatch(pin))return NextResponse.json({error:'Invalid credentials'},{status:401,headers:privateHeaders});
+  const response=NextResponse.json({ok:true},{headers:privateHeaders});
+  response.cookies.set(adminCookieName,adminCookieValue(),{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'strict',path:'/',maxAge:adminSessionSeconds});
+  return response;
+}
+
+export async function DELETE(req:Request){
+  if(!sameOrigin(req))return NextResponse.json({error:'Forbidden'},{status:403,headers:privateHeaders});
+  const response=NextResponse.json({ok:true},{headers:privateHeaders});
+  response.cookies.set(adminCookieName,'',{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'strict',path:'/',maxAge:0});
+  return response;
+}

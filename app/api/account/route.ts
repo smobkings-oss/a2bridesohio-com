@@ -1,6 +1,7 @@
 import{NextResponse}from'next/server';
 import{accountClient,currentAccount}from'../../../lib/account';
 import{db}from'../../../lib/db';
+import{sameOrigin}from'../../../lib/http';
 
 const clean=(v:unknown,n:number)=>String(v||'').trim().slice(0,n);
 
@@ -12,6 +13,7 @@ export async function GET(){
 
 export async function POST(req:Request){
   try{
+    if(!sameOrigin(req))return NextResponse.json({error:'Forbidden'},{status:403});
     const x=await req.json();
     const action=clean(x.action,20);
     const auth=await accountClient();
