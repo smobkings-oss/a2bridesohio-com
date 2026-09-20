@@ -1,0 +1,6 @@
+'use client';
+import {useState} from 'react';
+export default function ProfilePhoto(){
+  const [message,setMessage]=useState(''),[version,setVersion]=useState(0),[busy,setBusy]=useState(false);
+  return <section className="panel" style={{padding:18,marginBottom:18}}><strong>Your trip photo</strong><p className="muted">Your photo is shared with your assigned driver or passenger during an active ride. Use a clear photo of yourself.</p><img key={version} src={`/api/account/photo?v=${version}`} alt="Your profile photo" width={72} height={72} style={{objectFit:'cover',borderRadius:36}} onError={e=>{e.currentTarget.style.display='none'}}/><label>Upload photo (JPG, PNG or WebP, up to 3 MB)<input className="input" disabled={busy} type="file" accept="image/jpeg,image/png,image/webp" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;const form=new FormData();form.set('photo',file);setBusy(true);try{const r=await fetch('/api/account/photo',{method:'POST',body:form});const j=await r.json();if(!r.ok)throw Error(j.error);setVersion(v=>v+1);setMessage('Photo saved.')}catch(error){setMessage(error instanceof Error?error.message:'Upload failed.')}finally{setBusy(false)}}}/></label><p role="status">{message}</p></section>;
+}

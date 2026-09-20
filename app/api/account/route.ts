@@ -24,7 +24,7 @@ export async function POST(req:Request){
     if(action==='login'){
       const{data,error}=await auth.auth.signInWithPassword({email,password});
       if(error||!data.user)return NextResponse.json({error:'Email or password is incorrect.'},{status:401});
-      const{data:profile}=await db().from('profiles').select('role').eq('id',data.user.id).maybeSingle();
+      const profile=(await currentAccount())?.profile;
       if(!profile){await auth.auth.signOut();return NextResponse.json({error:'This account is not ready. Contact A2B RIDES.'},{status:403})}
       return NextResponse.json({ok:true,role:profile.role});
     }
@@ -36,17 +36,17 @@ export async function POST(req:Request){
       const result=await db().from('driver_applications').select('id,name,phone,email,vehicle,status').eq('email',email).eq('status','Approved').order('created_at',{ascending:false}).limit(1).maybeSingle();
       application=result.data;
       if(!application)return NextResponse.json({error:'Your driver application must be approved before you can create a driver account.'},{status:403});
+      const{data,error}=await auth.auth.signUp({email,password,options:{data:{role:'driver',name}}});
+      if(error)return NextResponse.json({error:'Driver email verification could not be sent. Contact A2B.'},{status:503});
+      if(data.session){await auth.auth.signOut();return NextResponse.json({error:'Driver access requires verified enrollment. Contact A2B.'},{status:403});}
+      return NextResponse.json({verificationRequired:true,message:'Check your email to verify ownership, then return here and sign in. Driver access requires an approved application.'});
     }
     const service=db();
     const{data:created,error:createError}=await service.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{role,name}});
     if(createError||!created.user)return NextResponse.json({error:createError?.message.includes('registered')?'An account already exists for this email. Sign in instead.':'Unable to create account.'},{status:400});
-    const profile={id:created.user.id,role,name:role==='driver'?application.name:name,phone:role==='driver'?application.phone:phone};
+    const profile={id:created.user.id,role,name,phone};
     const{error:profileError}=await service.from('profiles').insert(profile);
     if(profileError){await service.auth.admin.deleteUser(created.user.id);throw profileError}
-    if(role==='driver'){
-      const{error}=await service.from('drivers').insert({user_id:created.user.id,application_id:application.id,name:application.name,phone:application.phone,email,vehicle:application.vehicle,status:'Offline'});
-      if(error){await service.from('profiles').delete().eq('id',created.user.id);await service.auth.admin.deleteUser(created.user.id);throw error}
-    }
     const{error:loginError}=await auth.auth.signInWithPassword({email,password});
     if(loginError)throw loginError;
     return NextResponse.json({ok:true,role},{status:201});
