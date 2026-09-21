@@ -18,7 +18,7 @@ Canonical production repository for A2B RIDES, a DBA of Anytime Anywhere Solutio
 1. Create a Supabase project and run `supabase/schema.sql` in its SQL editor.
 2. Deploy this repository as a Next.js application.
 3. Add every variable from `.env.example` to the deployment environment.
-4. Create a Stripe webhook at `https://a2bridesohio.com/api/payments/stripe/webhook` for `checkout.session.completed`, `checkout.session.expired`, `payment_intent.payment_failed`, and `charge.refunded`.
+4. Create a Stripe webhook at `https://a2bridesohio.com/api/payments/stripe/webhook` for `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `payment_intent.payment_failed`, and `charge.refunded`.
 5. Test the full flow with Stripe test keys before using live keys.
 6. Point `a2bridesohio.com` to the deployment only after the temporary deployment URL passes testing.
 

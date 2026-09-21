@@ -13,7 +13,7 @@ export async function POST(req:Request){
   try{event=stripe.webhooks.constructEvent(body,signature,secret)}catch{return NextResponse.json({error:'Invalid signature'},{status:400})}
   try{
     const service=db();
-    if(event.type==='checkout.session.completed'){
+    if(event.type==='checkout.session.completed'||event.type==='checkout.session.async_payment_succeeded'){
       const session=event.data.object as Stripe.Checkout.Session,id=session.metadata?.ride_request_id;
       if(id&&session.payment_status==='paid'){
         const{data:ride}=await service.from('ride_requests').select('id,locked_fare_cents,stripe_checkout_session_id').eq('id',id).single();
@@ -21,15 +21,25 @@ export async function POST(req:Request){
         const{error}=await service.from('ride_requests').update({payment_status:'paid',status:'Scheduled',payment_method:'card',stripe_payment_intent_id:String(session.payment_intent||''),paid_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',id).eq('stripe_checkout_session_id',session.id);
         if(error)throw error;
       }
-    }else if(event.type==='checkout.session.expired'){
+    }else if(event.type==='checkout.session.expired'||event.type==='checkout.session.async_payment_failed'){
       const session=event.data.object as Stripe.Checkout.Session,id=session.metadata?.ride_request_id;
-      if(id)await service.from('ride_requests').update({payment_status:'unpaid',stripe_checkout_session_id:null,updated_at:new Date().toISOString()}).eq('id',id).eq('stripe_checkout_session_id',session.id).eq('payment_status','pending');
+      if(id){
+        const{error}=await service.from('ride_requests').update({payment_status:event.type==='checkout.session.expired'?'unpaid':'failed',stripe_checkout_session_id:event.type==='checkout.session.expired'?null:session.id,updated_at:new Date().toISOString()}).eq('id',id).eq('stripe_checkout_session_id',session.id).eq('payment_status','pending');
+        if(error)throw error;
+      }
     }else if(event.type==='charge.refunded'){
       const charge=event.data.object as Stripe.Charge;
-      if(typeof charge.payment_intent==='string'&&charge.refunded)await service.from('ride_requests').update({payment_status:'refunded',updated_at:new Date().toISOString()}).eq('stripe_payment_intent_id',charge.payment_intent);
+      if(typeof charge.payment_intent==='string'&&charge.refunded){
+        const{error}=await service.from('ride_requests').update({payment_status:'refunded',updated_at:new Date().toISOString()}).eq('stripe_payment_intent_id',charge.payment_intent);
+        if(error)throw error;
+      }
     }else if(event.type==='payment_intent.payment_failed'){
       const intent=event.data.object as Stripe.PaymentIntent;
-      await service.from('ride_requests').update({payment_status:'failed',updated_at:new Date().toISOString()}).eq('stripe_payment_intent_id',intent.id).neq('payment_status','paid');
+      const rideId=intent.metadata?.ride_request_id;
+      if(rideId){
+        const{error}=await service.from('ride_requests').update({payment_status:'failed',stripe_payment_intent_id:intent.id,updated_at:new Date().toISOString()}).eq('id',rideId).neq('payment_status','paid');
+        if(error)throw error;
+      }
     }
     return NextResponse.json({received:true});
   }catch(error){
