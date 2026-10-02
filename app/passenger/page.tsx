@@ -74,8 +74,8 @@ export default function Passenger() {
       </div>
       <ProfilePhoto />
       <div className="trip-actions" style={{marginBottom: 18}}>
-        <Link className="btn btn-gold" href="/hop">Hop On Now</Link>
-        <Link className="btn btn-outline" href="/book">Schedule a Ride</Link>
+        <Link className="btn btn-gold" href="/ride">Hop On Now</Link>
+        <Link className="btn btn-outline" href="/ride?mode=scheduled">Schedule a Ride</Link>
       </div>
       {message && <p className="notice" role="status">{message}</p>}
       <h2 style={{marginTop: 36}}>Your rides</h2>

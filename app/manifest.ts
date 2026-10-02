@@ -5,7 +5,7 @@ export default function manifest():MetadataRoute.Manifest{
     name:'A2B RIDES',
     short_name:'A2B RIDES',
     description:'Book and manage professional A2B RIDES transportation.',
-    start_url:'/',
+    start_url:'/ride',
     scope:'/',
     display:'standalone',
     background_color:'#050505',
@@ -17,9 +17,9 @@ export default function manifest():MetadataRoute.Manifest{
       {src:'/apple-icon',sizes:'180x180',type:'image/png',purpose:'any'},
     ],
     shortcuts:[
-      {name:'Book a Ride',short_name:'Book',url:'/book'},
-      {name:'Passenger Dashboard',short_name:'My Rides',url:'/passenger'},
-      {name:'Driver Dashboard',short_name:'Drive',url:'/driver'},
+      {name:'Hop on now',short_name:'Hop',url:'/ride'},
+      {name:'Schedule a ride',short_name:'Schedule',url:'/ride?mode=scheduled'},
+      {name:'My rides',short_name:'Trips',url:'/ride?tab=trips'},
     ],
   };
 }

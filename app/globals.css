@@ -96,5 +96,29 @@ h1,h2,h3 { line-height:1.05; letter-spacing:-.02em; }
 .hop-tabs { position:sticky; bottom:12px; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; background:rgba(8,8,8,.94); border:1px solid var(--line); border-radius:16px; padding:8px; }
 .hop-tabs a { text-align:center; padding:10px 6px; border-radius:10px; font-weight:800; color:var(--muted); }
 .hop-tabs a.on, .hop-tabs a:hover { background:#17140a; color:var(--gold); }
+.ride-app { width:min(520px,100%); min-height:100vh; margin:0 auto; padding:18px 16px 108px; background:radial-gradient(circle at 50% 0,rgba(226,189,67,.16),transparent 32%),#050505; }
+.ride-top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:14px; }
+.ride-top h1 { margin:4px 0 0; font-size:clamp(2rem,8vw,3rem); }
+.ride-card { padding:16px; display:grid; gap:12px; background:linear-gradient(145deg,#151515,#0d0d0d); border:1px solid var(--line); border-radius:18px; margin-top:12px; }
+.ride-card label { display:grid; gap:6px; font-weight:800; }
+.ride-cta { width:100%; min-height:52px; }
+.ride-map { position:relative; height:132px; border-radius:18px; overflow:hidden; border:1px solid #3a3218; background:linear-gradient(160deg,#12100a,#1b180f 40%,#0d0d0d); margin-bottom:12px; }
+.ride-map .road { position:absolute; background:rgba(226,189,67,.18); }
+.ride-map .road.a { left:8%; right:6%; top:58%; height:8px; border-radius:8px; }
+.ride-map .road.b { left:42%; top:12%; bottom:10%; width:8px; border-radius:8px; }
+.ride-map .pin { position:absolute; font-size:11px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; color:#111; background:var(--gold); border-radius:999px; padding:4px 8px; }
+.ride-map .pickup { left:14%; top:28%; }
+.ride-map .drop { right:12%; bottom:18%; }
+.ride-live { width:100%; text-align:left; display:grid; gap:4px; padding:14px; border-radius:16px; border:1px solid var(--gold); background:#141108; color:var(--text); margin-bottom:12px; }
+.ride-gate { padding:42px 8px; display:grid; gap:14px; }
+.ride-gate h1 { font-size:clamp(2.6rem,10vw,4.4rem); margin:0; }
+.class-row { display:grid; gap:8px; }
+.class-card { text-align:left; background:#0c0c0c; color:var(--text); border:1px solid var(--line); border-radius:12px; padding:10px 12px; }
+.class-card.on { border-color:var(--gold); box-shadow:0 0 0 1px var(--gold); }
+.class-card span { display:block; color:var(--muted); font-size:.86rem; }
+.ride-list { display:grid; gap:12px; }
+.ride-tabs { position:fixed; left:50%; bottom:12px; transform:translateX(-50%); width:min(488px,calc(100% - 24px)); display:grid; grid-template-columns:repeat(3,1fr); gap:8px; background:rgba(8,8,8,.96); border:1px solid var(--line); border-radius:16px; padding:8px; z-index:30; }
+.ride-tabs button { border:0; background:transparent; color:var(--muted); border-radius:10px; min-height:44px; font-weight:900; }
+.ride-tabs button.on { background:#17140a; color:var(--gold); }
 @media(max-width:800px){.grid2,.grid3{grid-template-columns:1fr}.navlinks{display:none!important}.mobile-call{display:inline-flex}.section{padding-block:52px}.hero{min-height:66vh}}
 @media(max-width:600px){.role-picker,.route-box,.booking-actions{grid-template-columns:1fr}.dashboard-head,.ride-card,.availability,.trip-top,.fare-card,.hop-top,.hop-live{align-items:stretch;flex-direction:column}.ride-card>div:last-child{align-items:stretch}.fare-card>div:last-child{text-align:left}.account-tabs .btn{flex:1}.stop-row{grid-template-columns:1fr}}

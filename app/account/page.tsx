@@ -26,7 +26,7 @@ export default function Account() {
       }
       const next = new URLSearchParams(window.location.search).get('next');
       const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '';
-      router.push(j.role === 'driver' ? '/driver' : safeNext || '/hop');
+      router.push(j.role === 'driver' ? '/driver' : safeNext || '/ride');
       router.refresh();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Unable to continue.');
