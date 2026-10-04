@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#050505" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="A2B Rider" />
+<title>A2B Rider — Hop on or schedule</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  :root {
+    --bg:#050505; --surface:#111111; --surface-2:#181816; --gold:#e2bd43; --gold-2:#f5df91;
+    --text:#f7f7f5; --muted:#aaa9a3; --line:#2c2b28; --danger:#ff8b8b; --ok:#b7e3a1;
+  }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#020202; color:var(--text); font-family:Arial, Helvetica, sans-serif; }
+  button, input, select, textarea { font:inherit; color:inherit; }
+  button { cursor:pointer; }
+  a { color:inherit; }
+  .stage { min-height:100%; display:grid; place-items:center; padding:18px; }
+  .phone {
+    width:min(430px, 100%); height:min(920px, calc(100vh - 24px)); background:
+      radial-gradient(circle at 50% -10%, rgba(226,189,67,.22), transparent 34%), var(--bg);
+    border:1px solid #2a2618; border-radius:32px; overflow:hidden; position:relative;
+    box-shadow:0 30px 80px rgba(0,0,0,.55), inset 0 0 0 1px rgba(226,189,67,.08);
+    display:flex; flex-direction:column;
+  }
+  @media (max-width:520px) {
+    .stage { padding:0; }
+    .phone { width:100%; height:100vh; height:100dvh; border:0; border-radius:0; }
+  }
+  .top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:16px 16px 8px; }
+  .eyebrow { color:var(--gold); font-weight:900; letter-spacing:.18em; font-size:11px; margin:0; }
+  h1 { margin:4px 0 0; font-size:30px; letter-spacing:-.03em; line-height:1; }
+  .call { border:1px solid var(--line); background:#111; color:var(--text); border-radius:999px; padding:8px 12px; font-weight:800; text-decoration:none; }
+  .map-wrap { height:42%; min-height:230px; margin:8px 12px 0; border-radius:22px; overflow:hidden; border:1px solid #3a3218; position:relative; }
+  #map { height:100%; width:100%; background:#101008; }
+  .map-badge { position:absolute; z-index:500; left:10px; top:10px; background:rgba(8,8,8,.86); border:1px solid var(--line); border-radius:999px; padding:6px 10px; font-size:12px; font-weight:800; }
+  .sheet { flex:1; overflow:auto; padding:12px 12px 92px; }
+  .toggle { display:grid; grid-template-columns:1fr 1fr; gap:6px; background:#0c0c0c; border:1px solid var(--line); border-radius:999px; padding:5px; margin-bottom:12px; }
+  .toggle button, .tabs button, .ghost, .gold-btn, .place, .class-card { border:0; }
+  .toggle button { background:transparent; color:var(--muted); border-radius:999px; min-height:42px; font-weight:900; }
+  .toggle button.on { background:linear-gradient(135deg, var(--gold-2), var(--gold)); color:#111; }
+  .card { background:linear-gradient(160deg,#161616,#0d0d0d); border:1px solid var(--line); border-radius:18px; padding:14px; display:grid; gap:10px; }
+  label { display:grid; gap:6px; font-weight:800; font-size:13px; }
+  .input, select, textarea { width:100%; background:#171715; border:1px solid #3b3b39; border-radius:12px; min-height:46px; padding:11px 12px; }
+  textarea { min-height:72px; resize:vertical; }
+  .input:focus, select:focus, textarea:focus { outline:2px solid rgba(226,189,67,.4); border-color:var(--gold); }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  .ghost { background:#111; border:1px solid var(--line)!important; border-radius:999px; padding:8px 12px; font-weight:800; }
+  .places { display:grid; gap:8px; max-height:220px; overflow:auto; }
+  .place { text-align:left; background:#0c0c0c; border:1px solid var(--line)!important; border-radius:12px; padding:10px 12px; }
+  .place span, .class-card span, .muted { color:var(--muted); font-weight:500; display:block; font-size:13px; }
+  .classes { display:grid; gap:8px; }
+  .class-card { text-align:left; background:#0c0c0c; border:1px solid var(--line)!important; border-radius:14px; padding:10px 12px; }
+  .class-card.on { border-color:var(--gold)!important; box-shadow:inset 0 0 0 1px var(--gold); }
+  .fare { display:flex; justify-content:space-between; gap:12px; align-items:center; border:1px solid var(--gold); border-radius:16px; padding:14px; background:linear-gradient(135deg,#17140a,#0c0b07); }
+  .fare strong { color:var(--gold); font-size:32px; line-height:1; }
+  .gold-btn { width:100%; min-height:52px; border-radius:14px; font-weight:900; background:linear-gradient(135deg,var(--gold-2),var(--gold),#aa7f08); color:#111; }
+  .gold-btn:disabled { opacity:.55; cursor:not-allowed; }
+  .notice { background:#17140a; border:1px solid #5b4d1d; border-radius:12px; padding:10px 12px; font-size:14px; }
+  .tabs { position:absolute; left:12px; right:12px; bottom:12px; display:grid; grid-template-columns:repeat(4,1fr); gap:6px; background:rgba(8,8,8,.96); border:1px solid var(--line); border-radius:16px; padding:6px; z-index:600; }
+  .tabs button { background:transparent; color:var(--muted); border-radius:10px; min-height:44px; font-weight:900; }
+  .tabs button.on { background:#17140a; color:var(--gold); }
+  .trip { display:grid; gap:6px; }
+  .chip { display:inline-flex; border:1px solid #6b5819; background:#17140a; color:var(--gold-2); border-radius:999px; padding:4px 9px; font-size:12px; font-weight:800; }
+  .live { border:1px solid var(--gold); background:#141108; border-radius:16px; padding:12px; display:grid; gap:4px; margin-bottom:10px; text-align:left; width:100%; }
+  .driver { display:flex; gap:10px; align-items:center; }
+  .avatar { width:42px; height:42px; border-radius:50%; display:grid; place-items:center; background:#e2bd43; color:#111; font-weight:900; }
+  .pay { display:flex; gap:14px; }
+  .hidden { display:none !important; }
+  .leaflet-control-attribution { font-size:10px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="phone">
+    <header class="top">
+      <div>
+        <p class="eyebrow">A2B RIDER</p>
+        <h1 id="title">Hop on</h1>
+      </div>
+      <a class="call" href="tel:14194555181">419-455-5181</a>
+    </header>
+    <div class="map-wrap" id="mapWrap">
+      <div id="map"></div>
+      <div class="map-badge" id="mapBadge">Toledo · NW Ohio</div>
+    </div>
+    <div class="sheet" id="sheet"></div>
+    <nav class="tabs">
+      <button type="button" data-tab="hop">Hop</button>
+      <button type="button" data-tab="schedule">Schedule</button>
+      <button type="button" data-tab="trips">Trips</button>
+      <button type="button" data-tab="me">Me</button>
+    </nav>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const PLACES = [
+  {label:'Downtown Toledo', address:'1 Government Center, Toledo, OH 43604', tag:'City', lat:41.6528, lng:-83.5379},
+  {label:'Toledo Express Airport (TOL)', address:'11013 Airport Hwy, Swanton, OH 43558', tag:'Airport', lat:41.5868, lng:-83.8078},
+  {label:'ProMedica Toledo Hospital', address:'2142 N Cove Blvd, Toledo, OH 43606', tag:'Medical', lat:41.6852, lng:-83.5554},
+  {label:'Fifth Third Field', address:'2602 N Summit St, Toledo, OH 43611', tag:'Event', lat:41.6484, lng:-83.5381},
+  {label:'Franklin Park Mall', address:'5001 Monroe St, Toledo, OH 43623', tag:'Shop', lat:41.6977, lng:-83.6118},
+  {label:'Levis Commons / Perrysburg', address:'3201 Levis Commons Blvd, Perrysburg, OH 43551', tag:'Perrysburg', lat:41.5354, lng:-83.6382},
+  {label:'Arrowhead Park / Maumee', address:'1715 Indian Wood Circle, Maumee, OH 43537', tag:'Maumee', lat:41.5622, lng:-83.6794},
+  {label:'Hollywood Casino Toledo', address:'1968 Miami St, Toledo, OH 43605', tag:'Night', lat:41.6376, lng:-83.5204},
+  {label:'University of Toledo', address:'2801 W Bancroft St, Toledo, OH 43606', tag:'Campus', lat:41.6578, lng:-83.6136},
+  {label:'Findlay', address:'200 E Main Cross St, Findlay, OH 45840', tag:'Findlay', lat:41.0442, lng:-83.6499},
+  {label:'Fremont', address:'323 S Front St, Fremont, OH 43420', tag:'Fremont', lat:41.3503, lng:-83.1219},
+  {label:'Tiffin', address:'51 E Market St, Tiffin, OH 44883', tag:'Tiffin', lat:41.1145, lng:-83.1780},
+  {label:'DTW Airport', address:'Detroit Metropolitan Wayne County Airport, Detroit, MI', tag:'Airport', lat:42.2162, lng:-83.3554},
+  {label:'Cleveland Hopkins (CLE)', address:'5300 Riverside Dr, Cleveland, OH 44135', tag:'Airport', lat:41.4117, lng:-81.8498}
+];
+const CLASSES = [
+  {id:'standard', name:'A2B Standard', detail:'Everyday sedan. Best for 1–3 riders.', mult:1},
+  {id:'comfort', name:'A2B Comfort', detail:'More room, quieter cabin, extra bags.', mult:1.18},
+  {id:'tesla', name:'Tesla Navigator', detail:'Model 3 when a fleet car is free.', mult:1.28}
+];
+const DRIVERS = [
+  {name:'Jordan Hale', vehicle:'Tesla Model 3', plate:'A2B 318', rating:'4.98'},
+  {name:'Maya Cole', vehicle:'Comfort sedan', plate:'A2B 204', rating:'4.95'},
+  {name:'Andre Walsh', vehicle:'Standard sedan', plate:'A2B 119', rating:'4.92'}
+];
+const KEY = 'a2b-rider-v1';
+const state = load();
+let tab = 'hop';
+let mode = 'now';
+let picker = null;
+let query = '';
+let map, pickupMarker, dropoffMarker, driverMarker, routeLine;
+let simTimer = null;
+
+function load() {
+  try { return Object.assign(defaultState(), JSON.parse(localStorage.getItem(KEY) || '{}')); }
+  catch { return defaultState(); }
+}
+function defaultState() {
+  return {
+    profile:{name:'', phone:'', home:'', work:''},
+    draft:{pickup:'', dropoff:'', pickupLL:null, dropoffLL:null, date:'', time:'', passengers:'1', rideClass:'standard', airport:false, notes:'', pay:'card'},
+    rides:[]
+  };
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+function easternPlus(minutes) {
+  const d = new Date(Date.now() + minutes * 60000);
+  const parts = new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'}).formatToParts(d);
+  const get = t => parts.find(p => p.type === t).value;
+  return {date:`${get('year')}-${get('month')}-${get('day')}`, time:`${get('hour')}:${get('minute')}`};
+}
+function money(n) { return '$' + Number(n).toFixed(2); }
+function haversine(a, b) {
+  const R = 3958.8, dLat = (b.lat-a.lat)*Math.PI/180, dLng = (b.lng-a.lng)*Math.PI/180;
+  const s = Math.sin(dLat/2)**2 + Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+function surcharge(date, time) {
+  const day = new Date(date + 'T12:00:00Z').getUTCDay();
+  const [h,m] = String(time||'0:0').split(':').map(Number);
+  const t = h*60+(m||0);
+  let percent = 0, label = 'Standard A2B rate';
+  const set = (p,l) => { if (p>percent) { percent=p; label=l; } };
+  if ([4,5,6].includes(day) && t>=20*60 && t<22*60) set(10,'Thursday–Saturday evening');
+  if ([4,5,6].includes(day) && t>=0 && t<3*60+46) set(20,'Thursday–Saturday late night');
+  if (day>=1 && day<=5 && t>=7*60 && t<8*60) set(15,'Weekday morning rush');
+  if (day>=1 && day<=5 && t>=11*60 && t<13*60) set(10,'Weekday midday');
+  if (day>=1 && day<=5 && t>=16*60+30 && t<18*60) set(12,'Weekday evening rush');
+  return {percent, label};
+}
+function quote() {
+  const d = state.draft;
+  if (!d.pickupLL || !d.dropoffLL) return null;
+  const miles = Math.max(1.2, haversine(d.pickupLL, d.dropoffLL) * 1.22);
+  const minutes = Math.max(8, miles * 2.4);
+  const when = mode === 'now' ? easternPlus(8) : {date:d.date, time:d.time};
+  const base = 3.5, perMile = 1.65, perMin = 0.25, minimum = 12;
+  const airportFee = d.airport ? 10 : 0;
+  const klass = CLASSES.find(c => c.id === d.rideClass) || CLASSES[0];
+  const subtotal = Math.max(minimum, (base + miles*perMile + minutes*perMin + airportFee) * klass.mult);
+  const surge = surcharge(when.date, when.time);
+  const total = subtotal * (1 + surge.percent/100);
+  return {miles, minutes, subtotal, total, ...surge, when, klass};
+}
+function activeRide() { return state.rides.find(r => !['Completed','Canceled'].includes(r.status)); }
+
+function bootMap() {
+  map = L.map('map', {zoomControl:false, attributionControl:true}).setView([41.6528, -83.5379], 12);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution:'&copy; OSM &copy; CARTO', maxZoom:19
+  }).addTo(map);
+  setTimeout(() => map.invalidateSize(), 250);
+}
+function syncMap() {
+  if (!map) return;
+  const d = state.draft;
+  if (pickupMarker) map.removeLayer(pickupMarker);
+  if (dropoffMarker) map.removeLayer(dropoffMarker);
+  if (routeLine) map.removeLayer(routeLine);
+  const pts = [];
+  if (d.pickupLL) {
+    pickupMarker = L.circleMarker(d.pickupLL, {radius:8, color:'#e2bd43', fillColor:'#e2bd43', fillOpacity:1}).addTo(map).bindTooltip('Pickup');
+    pts.push(d.pickupLL);
+  }
+  if (d.dropoffLL) {
+    dropoffMarker = L.circleMarker(d.dropoffLL, {radius:8, color:'#f7f7f5', fillColor:'#111', fillOpacity:1}).addTo(map).bindTooltip('Dropoff');
+    pts.push(d.dropoffLL);
+  }
+  if (pts.length === 2) {
+    routeLine = L.polyline(pts, {color:'#e2bd43', weight:4, opacity:.85}).addTo(map);
+    map.fitBounds(routeLine.getBounds().pad(0.3));
+  } else if (pts.length === 1) map.setView(pts[0], 13);
+  const live = activeRide();
+  if (live && live.driverLL) {
+    if (driverMarker) driverMarker.setLatLng(live.driverLL);
+    else driverMarker = L.circleMarker(live.driverLL, {radius:7, color:'#111', fillColor:'#f5df91', fillOpacity:1}).addTo(map).bindTooltip(live.driver.name);
+  }
+}
+function usePlace(place, which) {
+  state.draft[which] = place.address;
+  state.draft[which+'LL'] = {lat:place.lat, lng:place.lng};
+  if (/airport/i.test(place.label + place.tag)) state.draft.airport = true;
+  picker = null; query = ''; save(); render();
+}
+function useCurrent() {
+  if (!navigator.geolocation) return alert('Location is not available in this browser.');
+  navigator.geolocation.getCurrentPosition(pos => {
+    const ll = {lat:pos.coords.latitude, lng:pos.coords.longitude};
+    state.draft.pickup = `Current location (${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)})`;
+    state.draft.pickupLL = ll;
+    picker = null; save(); render();
+  }, () => alert('Turn on location or pick a saved place.'), {enableHighAccuracy:true, timeout:8000});
+}
+function id() { return 'A2B-' + Math.random().toString(36).slice(2, 7).toUpperCase(); }
+async function placeOrder() {
+  const d = state.draft;
+  const q = quote();
+  if (!d.pickup || !d.dropoff) return alert('Add a pickup and a dropoff.');
+  if (mode === 'scheduled' && (!d.date || !d.time)) return alert('Pick a date and time.');
+  if (!state.profile.name || !state.profile.phone) { tab = 'me'; render(); return alert('Add your name and phone first so dispatch can reach you.'); }
+  const when = mode === 'now' ? easternPlus(8) : {date:d.date, time:d.time};
+  const ride = {
+    id:id(), createdAt:new Date().toISOString(), mode, status: mode === 'now' ? 'Searching' : 'Scheduled',
+    pickup:d.pickup, dropoff:d.dropoff, pickupLL:d.pickupLL, dropoffLL:d.dropoffLL,
+    date:when.date, time:when.time, passengers:d.passengers, rideClass:q ? q.klass.name : 'A2B Standard',
+    airport:d.airport, notes:d.notes, pay:d.pay, estimate:q ? q.total : null, miles:q ? q.miles : null,
+    driver:null, driverLL:null, progress:0, live:false
+  };
+  try {
+    const res = await fetch('/api/ride-requests', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({
+      pickup:d.pickup, dropoff:d.dropoff, date:when.date, time:when.time, passengers:d.passengers,
+      airport:d.airport, paymentMethod:d.pay, notes:`[CLASS:${ride.rideClass}] ${d.notes}`.trim(), when:mode
+    })});
+    const data = await res.json();
+    if (res.ok) { ride.live = true; ride.id = data.id || ride.id; ride.status = mode === 'now' ? 'New' : 'Scheduled'; }
+  } catch {}
+  state.rides.unshift(ride);
+  save();
+  tab = 'trips';
+  render();
+  if (!ride.live && mode === 'now') simulate(ride.id);
+}
+function simulate(rideId) {
+  clearInterval(simTimer);
+  const steps = ['Searching','Assigned','En Route','Arrived','In Progress','Completed'];
+  let i = 0;
+  simTimer = setInterval(() => {
+    const ride = state.rides.find(r => r.id === rideId);
+    if (!ride || ride.status === 'Canceled') return clearInterval(simTimer);
+    i = Math.min(i+1, steps.length-1);
+    ride.status = steps[i];
+    if (ride.status === 'Assigned') ride.driver = DRIVERS[Math.floor(Math.random()*DRIVERS.length)];
+    if (ride.pickupLL && ride.dropoffLL && ride.status === 'En Route') ride.driverLL = offset(ride.pickupLL, 0.03, -0.03);
+    if (ride.status === 'Arrived' && ride.pickupLL) ride.driverLL = ride.pickupLL;
+    if (ride.status === 'In Progress') ride.progress = 0.45;
+    if (ride.status === 'Completed') { ride.progress = 1; clearInterval(simTimer); }
+    moveDriver(ride);
+    save(); render();
+    if (i >= steps.length-1) clearInterval(simTimer);
+  }, 2800);
+}
+function offset(ll, dLat, dLng) { return {lat:ll.lat+dLat, lng:ll.lng+dLng}; }
+function moveDriver(ride) {
+  if (!ride.pickupLL || !ride.dropoffLL || !ride.driver) return;
+  if (ride.status === 'In Progress') {
+    ride.driverLL = {
+      lat: ride.pickupLL.lat + (ride.dropoffLL.lat-ride.pickupLL.lat)*0.55,
+      lng: ride.pickupLL.lng + (ride.dropoffLL.lng-ride.pickupLL.lng)*0.55
+    };
+  }
+}
+function cancelRide(id) {
+  const ride = state.rides.find(r => r.id === id);
+  if (!ride || !confirm('Cancel this ride?')) return;
+  ride.status = 'Canceled';
+  save(); render();
+}
+function suggestions() {
+  const q = query.toLowerCase();
+  return PLACES.filter(p => !q || `${p.label} ${p.address} ${p.tag}`.toLowerCase().includes(q));
+}
+function render() {
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  const titles = {hop:'Hop on', schedule:'Schedule', trips:'Your rides', me:'You'};
+  document.getElementById('title').textContent = titles[tab];
+  document.getElementById('mapWrap').classList.toggle('hidden', tab === 'me');
+  const sheet = document.getElementById('sheet');
+  if (tab === 'hop' || tab === 'schedule') sheet.innerHTML = hopHtml();
+  if (tab === 'trips') sheet.innerHTML = tripsHtml();
+  if (tab === 'me') sheet.innerHTML = meHtml();
+  bind();
+  syncMap();
+  setTimeout(() => map && map.invalidateSize(), 80);
+}
+function hopHtml() {
+  mode = tab === 'schedule' ? 'scheduled' : 'now';
+  const d = state.draft;
+  const q = quote();
+  const live = activeRide();
+  const when = mode === 'now' ? easternPlus(8) : {date:d.date || easternPlus(45).date, time:d.time || easternPlus(45).time};
+  if (!d.date) d.date = when.date;
+  if (!d.time) d.time = when.time;
+  return `
+    ${live ? `<button class="live" data-go="trips"><span class="chip">${live.status}</span><strong>${statusCopy(live.status)}</strong><span class="muted">${live.pickup} → ${live.dropoff}</span></button>` : ''}
+    <div class="toggle">
+      <button type="button" data-mode="now" class="${mode==='now'?'on':''}">Hop now</button>
+      <button type="button" data-mode="scheduled" class="${mode==='scheduled'?'on':''}">Schedule</button>
+    </div>
+    <form class="card" id="order">
+      <label>Pickup<input class="input" name="pickup" required placeholder="Where should we pick you up?" value="${esc(d.pickup)}" data-focus="pickup"></label>
+      <label>Dropoff<input class="input" name="dropoff" required placeholder="Where are you going?" value="${esc(d.dropoff)}" data-focus="dropoff"></label>
+      <div class="row">
+        <button class="ghost" type="button" id="loc">Use my location</button>
+        <button class="ghost" type="button" id="swap">Swap</button>
+        <button class="ghost" type="button" data-saved="home">Home</button>
+        <button class="ghost" type="button" data-saved="work">Work</button>
+      </div>
+      ${picker ? `<div class="places"><input class="input" id="q" placeholder="Search Toledo, airports, hospitals…" value="${esc(query)}">${suggestions().map((p,i)=>`<button class="place" type="button" data-place="${i}"><strong>${p.label}</strong><span>${p.tag} · ${p.address}</span></button>`).join('')}</div>` : ''}
+      ${mode==='scheduled' ? `<div class="row"><label>Date<input class="input" type="date" name="date" required value="${d.date}"></label><label>Time (Eastern)<input class="input" type="time" name="time" required value="${d.time}"></label></div>` : `<p class="muted">Instant hop. Pickup window starts about 8 minutes from now. A driver still confirms arrival.</p>`}
+      <div class="classes">${CLASSES.map(c=>`<button type="button" class="class-card ${d.rideClass===c.id?'on':''}" data-class="${c.id}"><strong>${c.name}</strong><span>${c.detail}</span></button>`).join('')}</div>
+      <div class="row">
+        <label>Riders<select class="input" name="passengers">${[1,2,3,4,5,6].map(n=>`<option ${d.passengers==n?'selected':''}>${n}</option>`).join('')}</select></label>
+        <label class="ghost" style="display:flex;align-items:center;gap:8px"><input type="checkbox" name="airport" ${d.airport?'checked':''}> Airport trip</label>
+      </div>
+      <label>Notes<textarea class="input" name="notes" maxlength="900" placeholder="Gate, child seat, extra bags…">${esc(d.notes)}</textarea></label>
+      <div class="fare">${q ? `<strong>${money(q.total)}</strong><div>${q.miles.toFixed(1)} mi · ${Math.round(q.minutes)} min<br>${q.percent? q.percent+'% '+q.label : q.label}</div>` : `<span>Enter pickup and dropoff for a live estimate.</span>`}</div>
+      <div class="pay"><label><input type="radio" name="pay" value="card" ${d.pay==='card'?'checked':''}> Card after final fare</label><label><input type="radio" name="pay" value="cash" ${d.pay==='cash'?'checked':''}> Cash</label></div>
+      <button class="gold-btn" type="submit">${mode==='now'?'Place instant ride':'Place scheduled ride'}</button>
+      <p class="muted">Estimate uses A2B base $3.50 + $1.65/mi + $0.25/min, $12 minimum. Final fare is confirmed by dispatch before card payment.</p>
+    </form>`;
+}
+function tripsHtml() {
+  if (!state.rides.length) return `<div class="card"><h2>No rides yet</h2><p class="muted">Hop now or schedule one for later.</p></div>`;
+  return state.rides.map(r => `<article class="card trip">
+    <div class="row" style="justify-content:space-between"><span class="chip">${r.status}</span><strong>${r.estimate?money(r.estimate):'Quote pending'}</strong></div>
+    <strong>${statusCopy(r.status)}</strong>
+    <div>${esc(r.pickup)}</div><div style="color:var(--gold)">to ${esc(r.dropoff)}</div>
+    <p class="muted">${r.mode==='now'?'Instant':'Scheduled'} · ${r.date} at ${r.time} · ${r.rideClass} · ${r.pay}${r.live?' · sent to A2B':''}</p>
+    ${r.driver?`<div class="driver"><div class="avatar">${r.driver.name[0]}</div><div><strong>${r.driver.name}</strong><span class="muted">${r.driver.vehicle} · ${r.driver.plate} · ${r.driver.rating}</span></div></div>`:''}
+    ${!['Completed','Canceled','In Progress'].includes(r.status)?`<button class="ghost" data-cancel="${r.id}">Cancel ride</button>`:''}
+  </article>`).join('');
+}
+function meHtml() {
+  const p = state.profile;
+  return `<form class="card" id="profile">
+    <h2 style="margin:0">Rider profile</h2>
+    <p class="muted">Saved on this phone. Sign in on a2bridesohio.com to send orders to live dispatch.</p>
+    <label>Name<input class="input" name="name" required value="${esc(p.name)}" placeholder="Your name"></label>
+    <label>Phone<input class="input" name="phone" required value="${esc(p.phone)}" placeholder="419-555-0100"></label>
+    <label>Home<input class="input" name="home" value="${esc(p.home)}" placeholder="Saved home address"></label>
+    <label>Work<input class="input" name="work" value="${esc(p.work)}" placeholder="Saved work address"></label>
+    <button class="gold-btn" type="submit">Save profile</button>
+    <a class="ghost" style="text-align:center;text-decoration:none" href="/account?next=/rider/">Sign in for live dispatch</a>
+    <p class="muted">Service area: Toledo, Perrysburg, Maumee, Findlay, Fremont, Tiffin, plus DTW and CLE airport runs. Direct support 419-455-5181.</p>
+  </form>`;
+}
+function statusCopy(status) {
+  return ({Searching:'Looking for a nearby A2B driver', New:'Request received by dispatch', Assigned:'Driver assigned', 'En Route':'Driver is on the way', Arrived:'Your driver is here', 'In Progress':'You are on the trip', Completed:'Trip complete', Canceled:'Canceled', Scheduled:'Locked on the calendar'})[status] || status;
+}
+function esc(v) { return String(v||'').replace(/[&<>"']/g, s => ({'&':'&','<':'<','>':'>','"':'"',"'":'&#39;'}[s])); }
+function readDraft(form) {
+  const data = new FormData(form);
+  state.draft.pickup = data.get('pickup') || state.draft.pickup;
+  state.draft.dropoff = data.get('dropoff') || state.draft.dropoff;
+  state.draft.date = data.get('date') || state.draft.date;
+  state.draft.time = data.get('time') || state.draft.time;
+  state.draft.passengers = data.get('passengers') || '1';
+  state.draft.notes = data.get('notes') || '';
+  state.draft.airport = form.airport ? form.airport.checked : state.draft.airport;
+  state.draft.pay = data.get('pay') || 'card';
+  if (!state.draft.pickupLL) {
+    const hit = PLACES.find(p => p.address === state.draft.pickup || p.label === state.draft.pickup);
+    if (hit) state.draft.pickupLL = {lat:hit.lat, lng:hit.lng};
+  }
+  if (!state.draft.dropoffLL) {
+    const hit = PLACES.find(p => p.address === state.draft.dropoff || p.label === state.draft.dropoff);
+    if (hit) state.draft.dropoffLL = {lat:hit.lat, lng:hit.lng};
+  }
+}
+function bind() {
+  document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { tab = b.dataset.mode === 'scheduled' ? 'schedule' : 'hop'; render(); });
+  document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { tab = b.dataset.go; render(); });
+  document.querySelectorAll('[data-focus]').forEach(input => input.addEventListener('focus', () => { picker = input.dataset.focus; query=''; render(); }));
+  const loc = document.getElementById('loc'); if (loc) loc.onclick = useCurrent;
+  const swap = document.getElementById('swap');
+  if (swap) swap.onclick = () => {
+    const d = state.draft;
+    [d.pickup, d.dropoff] = [d.dropoff, d.pickup];
+    [d.pickupLL, d.dropoffLL] = [d.dropoffLL, d.pickupLL];
+    save(); render();
+  };
+  document.querySelectorAll('[data-saved]').forEach(b => b.onclick = () => {
+    const value = state.profile[b.dataset.saved];
+    if (!value) { tab='me'; render(); return; }
+    state.draft.pickup = value; state.draft.pickupLL = null; save(); render();
+  });
+  document.querySelectorAll('[data-class]').forEach(b => b.onclick = () => { state.draft.rideClass = b.dataset.class; save(); render(); });
+  document.querySelectorAll('[data-place]').forEach(b => b.onclick = () => usePlace(suggestions()[Number(b.dataset.place)], picker || 'pickup'));
+  document.querySelectorAll('[data-cancel]').forEach(b => b.onclick = () => cancelRide(b.dataset.cancel));
+  const q = document.getElementById('q');
+  if (q) q.oninput = e => { query = e.target.value; const list = q.parentElement; const keep = q.value; render(); const next = document.getElementById('q'); if (next) { next.value = keep; next.focus(); } };
+  const order = document.getElementById('order');
+  if (order) order.onsubmit = e => { e.preventDefault(); readDraft(order); save(); placeOrder(); };
+  const profile = document.getElementById('profile');
+  if (profile) profile.onsubmit = e => {
+    e.preventDefault();
+    const data = new FormData(profile);
+    state.profile = {name:data.get('name'), phone:data.get('phone'), home:data.get('home'), work:data.get('work')};
+    save(); alert('Profile saved.');
+  };
+}
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); });
+bootMap();
+render();
+</script>
+</body>
+</html>

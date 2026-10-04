@@ -18,8 +18,8 @@ export default function Home() {
           <h1 style={{fontSize: 'clamp(3.4rem,10vw,7.5rem)', margin: '18px 0 20px'}}>HOP ON.<br /><span className="gold">OR SCHEDULE.</span></h1>
           <p className="muted" style={{fontSize: 20, maxWidth: 720, margin: '0 auto 30px'}}>Instant hop-on rides and scheduled pickups with live estimates, tracking and direct A2B support.</p>
           <div style={{display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap'}}>
-            <Link className="btn btn-gold" href="/ride">Hop On Now</Link>
-            <Link className="btn btn-outline" href="/ride?mode=scheduled">Schedule a Ride</Link>
+            <Link className="btn btn-gold" href="/rider/">Hop On Now</Link>
+            <Link className="btn btn-outline" href="/rider/">Schedule a Ride</Link>
             <a className="btn btn-outline" href="sms:14194555181">Text 419-455-5181</a>
           </div>
           <p className="muted" style={{marginTop: 18, fontSize: 14}}>Available 24/7 • Instant or reservation • Final fare confirmed before payment</p>
@@ -43,7 +43,7 @@ export default function Home() {
               <li style={{marginBottom: 14}}>Ride now, or schedule a later window.</li>
               <li>Track the trip and pay after the fare is confirmed.</li>
             </ol>
-            <Link className="btn btn-gold" style={{marginTop: 22}} href="/ride">Open Rider App</Link>
+            <Link className="btn btn-gold" style={{marginTop: 22}} href="/rider/">Open Rider App</Link>
           </div>
         </div>
       </section>
